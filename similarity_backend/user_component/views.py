@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate
+from django.db.models import manager
+from django.http import request
 from rest_framework.fields import USE_READONLYFIELD
 
 from .models import User, UserHistory
@@ -9,10 +11,11 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-class UserAPIView(APIView):
+class FuzzyAPIView(APIView):
     """User class default api view providing default functions as needed"""
 
     INVALID_VALUE = "invalid input"
+    DEFAULT_CHARGE = 10
 
     def get_all_user(self):
         return User.objects.all()
@@ -46,9 +49,10 @@ class UserAPIView(APIView):
         return check_user
 
     def get_user_history(self, pk: int):
-        data = None
+        """ Get user history by user id """
+        data = []
         try:
-            data = UserHistory.objects.get(pk=pk)
+            data = UserHistory.objects.filter(user_id=pk)
         except:
             pass
         return data
@@ -59,10 +63,13 @@ class UserAPIView(APIView):
         transaction_charge: str,
         user_id: int
     ):
+        user_obj = self.get_user(user_id)
+        if user_obj == None:
+            return None
         newUserHistory = UserHistory(
             model_utilized=model_utilized,
             transaction_charge=transaction_charge,
-            user_id=user_id
+            user_id=user_obj
         )
         try:
             newUserHistory.save()
@@ -71,7 +78,7 @@ class UserAPIView(APIView):
         return newUserHistory
 
     def get_transaction_charge(self):
-        return 10
+        return self.DEFAULT_CHARGE
 
     def get_invalid_message(self, msg=None):
         msg = msg or "invalid input"
@@ -89,7 +96,7 @@ class UserAPIView(APIView):
         return True
 
 
-class LoginUser(UserAPIView):
+class LoginUser(FuzzyAPIView):
     def post(self, request):
 
         email = request.data.get('email', None)
@@ -107,7 +114,7 @@ class LoginUser(UserAPIView):
         return Response(self.get_valid_message_body(UserSerialized.data))
 
 
-class RegisterUser(UserAPIView):
+class RegisterUser(FuzzyAPIView):
     def post(self, request):
         email = request.data.get('email', None)
         password = request.data.get('password', None)
@@ -116,6 +123,61 @@ class RegisterUser(UserAPIView):
         if not self.validate_input(email, password, username):
             return Response(self.get_invalid_message())
 
-        newuser = self.create_new_user( username, email, password )
+        newuser = self.create_new_user(username, email, password)
         UserSerialized = UserSerializer(newuser)
         return Response(self.get_valid_message_body(UserSerialized.data))
+
+
+class UserHistoryAPI(FuzzyAPIView):
+    def get(self, request):
+        pk = request.data.get('pk', None)
+
+        if not self.validate_input(pk):
+            return Response(self.get_invalid_message())
+
+        UserHistoryData = self.get_user_history(pk)
+        UserHistoryDataSerialized = UserHistorySerializer(
+            UserHistoryData, many=True)
+        return Response(self.get_valid_message_body(UserHistoryDataSerialized.data))
+
+    def post(self, request):
+        model_utilized = request.data.get("model_utilized", None)
+        transaction_charge = request.data.get("transaction_charge", None)
+        user_id = request.data.get("user_id", None)
+
+        if not self.validate_input(model_utilized, transaction_charge, user_id):
+            return Response(self.get_invalid_message())
+
+        newUserHistory = self.create_new_user_history(
+            model_utilized, transaction_charge, user_id)
+
+        if newUserHistory == None:
+            return Response(self.get_invalid_message())
+
+        newUserHistorySerialized = UserHistorySerializer(newUserHistory)
+        return Response(self.get_valid_message_body(newUserHistorySerialized.data))
+
+
+class ComparisonAPI(FuzzyAPIView):
+
+    COMPARIONS_ENGINE = dict()
+
+    def get_engine(self, algo):
+        return self.COMPARIONS_ENGINE.get(algo, self.sample_comp)
+
+    def sample_comp(self, sent1, sent2):
+        """ Sample algo for show """
+        return 0.7
+
+    def pair_comparision(self, algorithm, sent1, sent2):
+        return self.get_engine(algorithm)(sent1, sent2)
+
+    def multpile_pair_comp(self, algorithm, pairs):
+        algo_fxn = ''
+
+    def post(self, request):
+        algorithm = request.data.get("algorithm", None)
+        sentence1 = request.data.get("sentence1", None)
+        sentence2 = request.data.get("sentence2", None)
+
+        return Response(self.get_valid_message_body(self.pair_comparision(algorithm, sentence1, sentence2)))
