@@ -2,6 +2,7 @@
 
 TODO:
 	1. Create the api schema design
+	2. Create django rest api's
 
 
 
