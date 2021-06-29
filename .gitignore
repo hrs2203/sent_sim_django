@@ -1,4 +1,5 @@
 # ne #
+.vscode/
 proj_env/
 
 # Django #
