@@ -34,6 +34,7 @@ class UserAPIView(APIView):
         return data
 
     def create_new_user(self, username: str, email: str, password: str):
+        """ create unique user by email ? if present, returns from db"""
         check_user = self.get_user_email(email)
         if check_user == None:
             newUser = User.objects.create_user(username, email, password)
