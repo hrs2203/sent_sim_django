@@ -12,9 +12,7 @@ from rest_framework import status
 class UserAPIView(APIView):
     """User class default api view providing default functions as needed"""
 
-    INVALID_VALUE = {
-        "message": "invalid input"
-    }
+    INVALID_VALUE = "invalid input"
 
     def get_all_user(self):
         return User.objects.all()
@@ -76,11 +74,11 @@ class UserAPIView(APIView):
 
     def get_invalid_message(self, msg=None):
         msg = msg or "invalid input"
-        return {"statue": 400, "data": msg}
+        return {"statue": status.HTTP_400_BAD_REQUEST, "data": msg}
 
     def get_valid_message_body(self, body=None):
         body = body or {}
-        return {"statue": 200, "data": body}
+        return {"statue": status.HTTP_200_OK, "data": body}
 
     def validate_input(self, *args):
         "Validate that no entry is false"
@@ -101,7 +99,7 @@ class LoginUser(UserAPIView):
 
         user_object = self.get_user_email(email=email)
         if user_object == None:
-            return Response(self.get_invalid_message(self.INVALID_VALUE["message"]))
+            return Response(self.get_invalid_message(self.INVALID_VALUE))
         if not user_object.check_password(password):
             return Response(self.get_invalid_message("Invalid Password"))
         UserSerialized = UserSerializer(user_object)
