@@ -98,7 +98,6 @@ class FuzzyAPIView(APIView):
 
 class LoginUser(FuzzyAPIView):
     def post(self, request):
-
         email = request.data.get('email', None)
         password = request.data.get('password', None)
 
@@ -163,8 +162,10 @@ class ComparisonAPI(FuzzyAPIView):
     COMPARIONS_ENGINE = dict()
 
     def get_engine(self, algo):
+        ## TODO: Change this to some sort of invalid response
         return self.COMPARIONS_ENGINE.get(algo, self.sample_comp)
 
+    # TODO: remove this at later stages if possible.
     def sample_comp(self, sent1, sent2):
         """ Sample algo for show """
         return 0.7
@@ -172,6 +173,8 @@ class ComparisonAPI(FuzzyAPIView):
     def pair_comparision(self, algorithm, sent1, sent2):
         return self.get_engine(algorithm)(sent1, sent2)
 
+    # TODO: this may be slow, will need to create specific function for specific case
+    # and this can act as parent call.
     def multpile_pair_comp(self, algorithm, pairs):
         algo_fxn = ''
 
