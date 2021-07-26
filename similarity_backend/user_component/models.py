@@ -1,14 +1,7 @@
 from django.db import models
+from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 
-"""
-## User:
-    Default User Model
-    Fields:
-        - UserName
-        - Email
-        - Password
-"""
 
 class UserHistory(models.Model):
     """
@@ -25,16 +18,18 @@ class UserHistory(models.Model):
     transaction_charge = models.IntegerField()
     quert_count = models.IntegerField(default=1)
 
-class UserDetails(models.Model):
+
+class UserDetail(models.Model):
     """
-    ## UserDetails
-    for storing UserDetails
+    ## UserDetail
+    for storing UserDetail
     - Fields
         - user_id : Foreign Key to User Model, on_delete: CASCADE
         - total_credits : total credit left in user account
     """
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     total_credits = models.IntegerField(default=100)
+
 
 class SemanticModel(models.Model):
     """
@@ -46,6 +41,7 @@ class SemanticModel(models.Model):
     """
     model_name = models.CharField(max_length=20)
     charge = models.IntegerField(default=10)
+
 
 class QueryModel(models.Model):
     """
@@ -59,4 +55,3 @@ class QueryModel(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     query = models.CharField(max_length=100)
     query_response = models.CharField(max_length=100)
-

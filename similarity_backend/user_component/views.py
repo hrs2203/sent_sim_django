@@ -1,5 +1,6 @@
 from user_component.models import User, UserHistory
 from user_component.serializers import UserSerializer, UserHistorySerializer
+from user_component.utils import SAMPLE
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
