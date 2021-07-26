@@ -1,10 +1,5 @@
-from django.contrib.auth import authenticate
-from django.db.models import manager
-from django.http import request
-from rest_framework.fields import USE_READONLYFIELD
-
-from .models import User, UserHistory
-from .serializers import UserSerializer, UserHistorySerializer
+from user_component.models import User, UserHistory
+from user_component.serializers import UserSerializer, UserHistorySerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -162,7 +157,7 @@ class ComparisonAPI(FuzzyAPIView):
     COMPARIONS_ENGINE = dict()
 
     def get_engine(self, algo):
-        ## TODO: Change this to some sort of invalid response
+        # TODO: Change this to some sort of invalid response
         return self.COMPARIONS_ENGINE.get(algo, self.sample_comp)
 
     # TODO: remove this at later stages if possible.
