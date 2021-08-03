@@ -1,7 +1,7 @@
 # Django Backend for BTP Project : Semantic Similarity Comparision Engine.
 
 ## TODO:
-	- [x] Create Transactions for models
+	- [x] Create Models
 	- [ ] Create Transactions for models
 	- [ ] Create Utils functions
 	- [ ] Design API layer
