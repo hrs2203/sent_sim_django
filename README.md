@@ -4,6 +4,8 @@
 
 ## Model Description
 
+## Components
+
 - Front End
     - [ ]  Home Page
     - [ ]  Authentication
@@ -16,6 +18,7 @@
     - [ ]  Company registration page
         - [ ]  Upload file
     - [ ]  API Help Page
+----
 - Back End
     - [ ]  DB
         - [ ]  DB Models
@@ -24,6 +27,7 @@
         - [ ]  For Interaction with front-end
         - [ ]  For Interaction with other world
     - [ ]  Comparison Engine Integration
+----
 - Comparison Engine
     - [x]  Corpus Based Algorithm - Embedding generator
     - [x]  Sent-Sim Algorithm - Embedding generator
