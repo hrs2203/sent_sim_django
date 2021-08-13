@@ -35,6 +35,11 @@
         - [x]  One to One
         - [ ]  One to Many
         - [ ]  Many to Many
+----
+- Jupyter Notebook
+    - [ ] Make Notebook showing tests and results
+    - [ ] Download customer support sample files
+    - [ ] Try using Quora trained Sent-BERT, better question comparision
 
 
 
