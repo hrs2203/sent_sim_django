@@ -10,3 +10,5 @@ from user_component.serializers import (
     UserSerializer, UserHistorySerializer, UserDetailSerializer, 
     SemanticModelSerializer, QueryModelSerializer
 )
+
+SAMPLE = "HRISHABH"
