@@ -2,13 +2,13 @@ from sentence_transformers import SentenceTransformer, util
 model = SentenceTransformer('paraphrase-MiniLM-L12-v2')
 
 # Two lists of sentences
-sentences1 = ['The cat sits outside',
-             'A man is playing guitar',
-             'The new movie is awesome']
+sentences1 = ['i want to renew my password',
+             'i want to renew my password',
+             'i want to renew my password']
 
-sentences2 = ['The dog plays in the garden',
-              'A woman watches TV',
-              'The new movie is so great']
+sentences2 = ['i want to change my password',
+              'the gitar is player by the man',
+              'how to change my password']
 
 #Compute embedding for both lists
 # print("Generating embeddings for sentences")
