@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from user_component.comparision_engine import MultiSentenceBertComparision, CorpusBasedComparision
+
 
 class FuzzyAPIView(APIView):
     """User class default api view providing default functions as needed"""
@@ -155,28 +157,37 @@ class UserHistoryAPI(FuzzyAPIView):
 
 class ComparisonAPI(FuzzyAPIView):
 
-    COMPARIONS_ENGINE = dict()
+    ## TODO: Might have to create seprate api to comparision endpoints
 
-    def get_engine(self, algo):
-        # TODO: Change this to some sort of invalid response
-        return self.COMPARIONS_ENGINE.get(algo, self.sample_comp)
+    # TODO: Use this for corpus based comparision
+    def pair_comparision(self, sent1: str, sent2: str):
+        return CorpusBasedComparision(sent1, sent2)
 
-    # TODO: remove this at later stages if possible.
+    # TODO: Use this for SentBertComparision
+    def multpile_pair_comp(self, sentence_list_1: list, sentence_list_2: list):
+        return MultiSentenceBertComparision(sentence_list_1, sentence_list_2)
+
+    def __init__(self):
+        self.COMPARIONS_ENGINE = dict()
+        self.COMPARIONS_ENGINE["CorpusBasedComparision"] = self.pair_comparision
+        self.COMPARIONS_ENGINE["MultiSentenceBertComparision"] = self.multpile_pair_comp
+
     def sample_comp(self, sent1, sent2):
         """ Sample algo for show """
-        return 0.7
-
-    def pair_comparision(self, algorithm, sent1, sent2):
-        return self.get_engine(algorithm)(sent1, sent2)
-
-    # TODO: this may be slow, will need to create specific function for specific case
-    # and this can act as parent call.
-    def multpile_pair_comp(self, algorithm, pairs):
-        algo_fxn = ''
+        return 0.0
 
     def post(self, request):
         algorithm = request.data.get("algorithm", None)
         sentence1 = request.data.get("sentence1", None)
         sentence2 = request.data.get("sentence2", None)
+        comp_val = 0.0001
 
-        return Response(self.get_valid_message_body(self.pair_comparision(algorithm, sentence1, sentence2)))
+        if not self.validate_input(algorithm, sentence1, sentence2):
+            return Response(self.get_invalid_message())
+
+        if algorithm == "CorpusBasedComparision":
+            comp_val = CorpusBasedComparision(sentence1, sentence2)
+        elif algorithm == "MultiSentenceBertComparision":
+            comp_val = MultiSentenceBertComparision([sentence1], [sentence2])[0][0]
+
+        return Response(self.get_valid_message_body( comp_val ))
