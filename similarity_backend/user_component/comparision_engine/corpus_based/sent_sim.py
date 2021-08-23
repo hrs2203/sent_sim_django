@@ -196,7 +196,7 @@ def word_order_similarity(sentence_one, sentence_two):
     return 1.0 - (np.linalg.norm(r1 - r2) / np.linalg.norm(r1 + r2))
 
 
-def main(sentence_one, sentence_two):
+def CorpusBasedComparision(sentence_one, sentence_two):
     sent_set_one = set(filter(lambda x: not (
         x == '.' or x == '?'), word_tokenize(sentence_one)))
     sent_set_two = set(filter(lambda x: not (
@@ -218,7 +218,7 @@ def file_sem(f):
     while(i < no_of_sentences):
         j = i
         while(j < no_of_sentences):
-            sent_sim_matr[i][j] = main(ind_sentences[i], ind_sentences[j])
+            sent_sim_matr[i][j] = CorpusBasedComparision(ind_sentences[i], ind_sentences[j])
             sent_sim_matr[j][i] = sent_sim_matr[i][j]
             j += 1
         i += 1
@@ -243,7 +243,7 @@ def intro():
     elif option == 2:
         sent_one = input("Enter the first sentence : ")
         sent_two = input("Enter the second sentence two :")
-        prob_sim_sent = main(sent_one, sent_two)
+        prob_sim_sent = CorpusBasedComparision(sent_one, sent_two)
         print(prob_sim_sent)
     else:
         print("Wrong choice time exceeded!")
