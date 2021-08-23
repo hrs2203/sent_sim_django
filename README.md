@@ -33,8 +33,8 @@
     - [x]  Sent-Sim Algorithm - Embedding generator
     - [ ]  Comparison Methods
         - [x]  One to One
-        - [ ]  One to Many
-        - [ ]  Many to Many
+        - [x]  One to Many
+        - [x]  Many to Many
 ----
 - Jupyter Notebook
     - [ ] Make Notebook showing tests and results
