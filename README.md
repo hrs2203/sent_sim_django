@@ -2,14 +2,16 @@
 
 ## About
 
+for docs on approaches utilized please refer to this [link](./similarity_backend/user_component/comparision_engine/s7m1.md)
+
 ## Model Description
 
 ## Components
 
 - Front End
-    - [ ]  Home Page
-    - [ ]  Authentication
-        - [ ]  Single User
+    - [x]  Home Page
+    - [x]  Authentication
+        - [x]  Single User
         - [ ]  Organization
     - [ ]  Comparison page ( For both Org and Individuals )
         - [ ]  Multiple sentence A and Multiple Sentence B ( Comparison )
@@ -18,20 +20,21 @@
     - [ ]  Company registration page
         - [ ]  Upload file
     - [ ]  API Help Page
-----
+
+
 - Back End
-    - [ ]  DB
-        - [ ]  DB Models
-        - [ ]  DB Layer
+    - [x]  DB
+        - [x]  DB Models
+        - [x]  DB Layer
     - [ ]  REST API layer
         - [ ]  For Interaction with front-end
-        - [ ]  For Interaction with other world
+        - [x]  For Interaction with other world
     - [ ]  Comparison Engine Integration
 ----
 - Comparison Engine
     - [x]  Corpus Based Algorithm - Embedding generator
     - [x]  Sent-Sim Algorithm - Embedding generator
-    - [ ]  Comparison Methods
+    - [x]  Comparison Methods
         - [x]  One to One
         - [x]  One to Many
         - [x]  Many to Many
