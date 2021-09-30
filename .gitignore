@@ -1,6 +1,7 @@
 # ne #
 .vscode/
 proj_env/
+comparision_custom_model/ 
 
 # Django #
 *.log
