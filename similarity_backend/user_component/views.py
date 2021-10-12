@@ -1,12 +1,14 @@
-from user_component.models import User, UserHistory
-from user_component.serializers import UserSerializer, UserHistorySerializer
-from user_component.utils import SAMPLE
+import re
+from user_component.models import User, UserDetail, UserHistory
+from user_component.serializers import UserDetailSerializer, UserSerializer, UserHistorySerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from user_component.comparision_engine import MultiSentenceBertComparision, CorpusBasedComparision
+from user_component.comparision_engine import MultiSentenceBertComparision
+
+from user_component.static_var import QUERY_CHARGE
 
 
 class FuzzyAPIView(APIView):
@@ -25,6 +27,16 @@ class FuzzyAPIView(APIView):
         except:
             data = None
         return data
+    
+    def get_user_detail(self, pk: int):
+        user_obj = self.get_user(pk)
+        if user_obj:
+            try:
+                user_detail_obj = UserDetail.objects.get(user_id=user_obj)
+                return user_detail_obj
+            except:
+                return None
+        return None
 
     def get_user_email(self, email: str):
         data = None
@@ -38,26 +50,42 @@ class FuzzyAPIView(APIView):
         """ create unique user by email ? if present, returns from db"""
         check_user = self.get_user_email(email)
         if check_user == None:
-            newUser = User.objects.create_user(username, email, password)
             try:
+                newUser = User(
+                    username=username,
+                    email=email,
+                    password=password
+                )
                 newUser.save()
+                newUserBank = UserDetail(user_id=newUser)
+                newUserBank.save()
+                return newUser
             except:
-                pass
-            return newUser
+                return None
         return check_user
+    
+    def add_credit_to_user(self, pk, amt):
+        user_obj = self.get_user_detail(pk)
+        if user_obj == None:
+            return False
+        try:
+            user_obj.total_credits += amt
+            user_obj.save()
+            return True
+        except:
+            return False
 
     def get_user_history(self, pk: int):
         """ Get user history by user id """
         data = []
         try:
-            data = UserHistory.objects.filter(user_id=pk)
+            data = UserHistory.objects.filter(id=pk)
         except:
             pass
         return data
 
     def create_new_user_history(
         self,
-        model_utilized: str,
         transaction_charge: str,
         user_id: int
     ):
@@ -65,18 +93,18 @@ class FuzzyAPIView(APIView):
         if user_obj == None:
             return None
         newUserHistory = UserHistory(
-            model_utilized=model_utilized,
             transaction_charge=transaction_charge,
+            query_count=(transaction_charge//QUERY_CHARGE),
             user_id=user_obj
         )
         try:
             newUserHistory.save()
+            return True
         except:
-            pass
-        return newUserHistory
+            return False
 
     def get_transaction_charge(self):
-        return self.DEFAULT_CHARGE
+        return QUERY_CHARGE
 
     def get_invalid_message(self, msg=None):
         msg = msg or "invalid input"
@@ -125,17 +153,32 @@ class RegisterUser(FuzzyAPIView):
         return Response(self.get_valid_message_body(UserSerialized.data))
 
 
-class UserHistoryAPI(FuzzyAPIView):
-    def get(self, request):
-        pk = request.data.get('pk', None)
+class UserAmount(FuzzyAPIView):
+    def get(self, request, pk, amt):
+        if not self.validate_input(pk, amt):
+            return Response(self.get_invalid_message())
+        self.add_credit_to_user(pk, amt)
+        user_detail = self.get_user_detail(pk)
+        user_detail_serialized = UserDetailSerializer(user_detail)
+        return Response(self.get_valid_message_body({
+            "user_bank" : user_detail_serialized.data
+        }))
 
+
+class UserHistoryAPI(FuzzyAPIView):
+    def get(self, request, pk):
         if not self.validate_input(pk):
             return Response(self.get_invalid_message())
-
+        UserData = self.get_user(pk)
+        UserDataSerialized = UserSerializer(UserData)
         UserHistoryData = self.get_user_history(pk)
         UserHistoryDataSerialized = UserHistorySerializer(
-            UserHistoryData, many=True)
-        return Response(self.get_valid_message_body(UserHistoryDataSerialized.data))
+            UserHistoryData, many=True
+        )
+        return Response(self.get_valid_message_body({
+            "user": UserDataSerialized.data,
+            "user_history": UserHistoryDataSerialized.data
+        }))
 
     def post(self, request):
         model_utilized = request.data.get("model_utilized", None)
@@ -156,38 +199,17 @@ class UserHistoryAPI(FuzzyAPIView):
 
 
 class ComparisonAPI(FuzzyAPIView):
-
-    ## TODO: Might have to create seprate api to comparision endpoints
-
-    # TODO: Use this for corpus based comparision
-    def pair_comparision(self, sent1: str, sent2: str):
-        return CorpusBasedComparision(sent1, sent2)
-
-    # TODO: Use this for SentBertComparision
-    def multpile_pair_comp(self, sentence_list_1: list, sentence_list_2: list):
-        return MultiSentenceBertComparision(sentence_list_1, sentence_list_2)
-
-    def __init__(self):
-        self.COMPARIONS_ENGINE = dict()
-        self.COMPARIONS_ENGINE["CorpusBasedComparision"] = self.pair_comparision
-        self.COMPARIONS_ENGINE["MultiSentenceBertComparision"] = self.multpile_pair_comp
-
-    def sample_comp(self, sent1, sent2):
-        """ Sample algo for show """
-        return 0.0
-
     def post(self, request):
-        algorithm = request.data.get("algorithm", None)
-        sentence1 = request.data.get("sentence1", None)
-        sentence2 = request.data.get("sentence2", None)
+        sentence1 = request.data.get("sentences1", [])
+        sentence2 = request.data.get("sentences2", [])
         comp_val = 0.0001
 
-        if not self.validate_input(algorithm, sentence1, sentence2):
+        if not self.validate_input(sentence1, sentence2):
             return Response(self.get_invalid_message())
 
-        if algorithm == "CorpusBasedComparision":
-            comp_val = CorpusBasedComparision(sentence1, sentence2)
-        elif algorithm == "MultiSentenceBertComparision":
-            comp_val = MultiSentenceBertComparision([sentence1], [sentence2])[0][0]
+        comp_val = MultiSentenceBertComparision(sentence1, sentence2)
 
-        return Response(self.get_valid_message_body( comp_val ))
+        if len(sentence1) == len(sentence2):
+            comp_val = [comp_val[i][i] for i in range(len(sentence1))]
+
+        return Response(self.get_valid_message_body(comp_val))

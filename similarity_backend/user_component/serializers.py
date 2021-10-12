@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from user_component.models import (
-    User, UserHistory, UserDetail, SemanticModel, QueryModel
+    User, UserHistory, UserDetail, QueryModel
 )
 
 
@@ -22,10 +22,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SemanticModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SemanticModel
-        fields = '__all__'
+# class SemanticModelSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SemanticModel
+#         fields = '__all__'
 
 
 class QueryModelSerializer(serializers.ModelSerializer):

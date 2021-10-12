@@ -1,0 +1,1 @@
+QUERY_CHARGE = 10
