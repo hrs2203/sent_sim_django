@@ -56,6 +56,7 @@ class FuzzyAPIView(APIView):
                     email=email,
                     password=password
                 )
+                newUser.set_password(password)
                 newUser.save()
                 newUserBank = UserDetail(user_id=newUser)
                 newUserBank.save()
@@ -93,7 +94,7 @@ class FuzzyAPIView(APIView):
         try:
             newUserHistory = UserHistory(
                 transaction_charge=transaction_charge,
-                quert_count=(transaction_charge//QUERY_CHARGE),
+                query_count=(transaction_charge//QUERY_CHARGE),
                 user_id=user_obj
             )
             newUserHistory.save()

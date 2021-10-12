@@ -10,11 +10,11 @@ class UserHistory(models.Model):
         - user_id : Foreign Key to User Model, on_delete: CASCADE
         - model_utilized : name of model used
         - transaction_charge : total charge for operation
-        - quert_count : total number of queries in the transaction.   
+        - query_count : total number of queries in the transaction.   
     """
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     transaction_charge = models.IntegerField(default=0)
-    quert_count = models.IntegerField(default=1)
+    query_count = models.IntegerField(default=1)
 
 
 class UserDetail(models.Model):
