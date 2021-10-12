@@ -23,11 +23,11 @@ class FuzzyAPIView(APIView):
     def get_user(self, pk: int):
         data = None
         try:
-            data = User.objects.get(pk=pk)
+            data = User.objects.get(id=pk)
         except:
             data = None
         return data
-    
+
     def get_user_detail(self, pk: int):
         user_obj = self.get_user(pk)
         if user_obj:
@@ -63,7 +63,7 @@ class FuzzyAPIView(APIView):
             except:
                 return None
         return check_user
-    
+
     def add_credit_to_user(self, pk, amt):
         user_obj = self.get_user_detail(pk)
         if user_obj == None:
@@ -79,25 +79,23 @@ class FuzzyAPIView(APIView):
         """ Get user history by user id """
         data = []
         try:
-            data = UserHistory.objects.filter(id=pk)
+            data = UserHistory.objects.filter(user_id=pk)
         except:
             pass
         return data
 
     def create_new_user_history(
-        self,
-        transaction_charge: str,
-        user_id: int
+        self, transaction_charge: str, user_id: int
     ):
         user_obj = self.get_user(user_id)
         if user_obj == None:
             return None
-        newUserHistory = UserHistory(
-            transaction_charge=transaction_charge,
-            query_count=(transaction_charge//QUERY_CHARGE),
-            user_id=user_obj
-        )
         try:
+            newUserHistory = UserHistory(
+                transaction_charge=transaction_charge,
+                quert_count=(transaction_charge//QUERY_CHARGE),
+                user_id=user_obj
+            )
             newUserHistory.save()
             return True
         except:
@@ -161,12 +159,13 @@ class UserAmount(FuzzyAPIView):
         user_detail = self.get_user_detail(pk)
         user_detail_serialized = UserDetailSerializer(user_detail)
         return Response(self.get_valid_message_body({
-            "user_bank" : user_detail_serialized.data
+            "user_bank": user_detail_serialized.data
         }))
 
 
 class UserHistoryAPI(FuzzyAPIView):
-    def get(self, request, pk):
+    def get(self, request):
+        pk = request.query_params.get("pk", None)
         if not self.validate_input(pk):
             return Response(self.get_invalid_message())
         UserData = self.get_user(pk)
@@ -181,21 +180,29 @@ class UserHistoryAPI(FuzzyAPIView):
         }))
 
     def post(self, request):
-        model_utilized = request.data.get("model_utilized", None)
         transaction_charge = request.data.get("transaction_charge", None)
         user_id = request.data.get("user_id", None)
 
-        if not self.validate_input(model_utilized, transaction_charge, user_id):
+        if not self.validate_input(transaction_charge, user_id):
             return Response(self.get_invalid_message())
 
-        newUserHistory = self.create_new_user_history(
-            model_utilized, transaction_charge, user_id)
+        newUserHistoryUpdates = self.create_new_user_history(
+            transaction_charge, user_id
+        )
 
-        if newUserHistory == None:
+        if newUserHistoryUpdates == None or newUserHistoryUpdates == False:
             return Response(self.get_invalid_message())
 
-        newUserHistorySerialized = UserHistorySerializer(newUserHistory)
-        return Response(self.get_valid_message_body(newUserHistorySerialized.data))
+        UserData = self.get_user(user_id)
+        UserDataSerialized = UserSerializer(UserData)
+        UserHistoryData = self.get_user_history(user_id)
+        UserHistoryDataSerialized = UserHistorySerializer(
+            UserHistoryData, many=True
+        )
+        return Response(self.get_valid_message_body({
+            "user": UserDataSerialized.data,
+            "user_history": UserHistoryDataSerialized.data
+        }))
 
 
 class ComparisonAPI(FuzzyAPIView):
