@@ -1,4 +1,5 @@
 import re
+from typing import Collection
 from user_component.models import User, UserDetail, UserHistory
 from user_component.serializers import UserDetailSerializer, UserSerializer, UserHistorySerializer
 
@@ -70,6 +71,8 @@ class FuzzyAPIView(APIView):
         if user_obj == None:
             return False
         try:
+            if (user_obj.total_credits+amt < 0):
+                return False
             user_obj.total_credits += amt
             user_obj.save()
             return True
@@ -116,7 +119,7 @@ class FuzzyAPIView(APIView):
     def validate_input(self, *args):
         "Validate that no entry is false"
         for item in args:
-            if item == None:
+            if item == None or item == []:
                 return False
         return True
 
@@ -175,8 +178,11 @@ class UserHistoryAPI(FuzzyAPIView):
         UserHistoryDataSerialized = UserHistorySerializer(
             UserHistoryData, many=True
         )
+        user_detail = self.get_user_detail(pk)
+        user_detail_serialized = UserDetailSerializer(user_detail)
         return Response(self.get_valid_message_body({
             "user": UserDataSerialized.data,
+            "user_bank": user_detail_serialized.data.get("total_credits", 0),
             "user_history": UserHistoryDataSerialized.data
         }))
 
@@ -207,17 +213,30 @@ class UserHistoryAPI(FuzzyAPIView):
 
 
 class ComparisonAPI(FuzzyAPIView):
+
+    def make_comparison(self, sentence1, sentence2, user_id):
+        comp_val = MultiSentenceBertComparision(sentence1, sentence2)
+        row, col = len(comp_val), len(comp_val[0])
+        # add new user histroy and add to database
+        transaction_charge = row*col*QUERY_CHARGE
+        self.create_new_user_history(transaction_charge, user_id)
+        status = self.add_credit_to_user(user_id, -1*transaction_charge)
+        if status:
+            return comp_val
+        return -1
+
     def post(self, request):
-        sentence1 = request.data.get("sentences1", [])
-        sentence2 = request.data.get("sentences2", [])
+        user_id = request.data.get("user_id", None)
+        sentence1 = request.data.get("sentences1", None)
+        sentence2 = request.data.get("sentences2", None)
         comp_val = 0.0001
 
         if not self.validate_input(sentence1, sentence2):
             return Response(self.get_invalid_message())
 
-        comp_val = MultiSentenceBertComparision(sentence1, sentence2)
+        comp_val = self.make_comparison(sentence1, sentence2, user_id)
 
-        if len(sentence1) == len(sentence2):
-            comp_val = [comp_val[i][i] for i in range(len(sentence1))]
+        if comp_val == -1:
+            return Response( self.get_invalid_message("Insufficient Balance") )
 
         return Response(self.get_valid_message_body(comp_val))
