@@ -9,9 +9,9 @@
 <summary> Progress </summary>
 
 - Front End
-    - [x]  Home Page
-    - [x]  Authentication
-        - [x]  Single User
+    - [ ]  Home Page
+    - [ ]  Authentication
+        - [ ]  Single User
         - [ ]  Organization
     - [ ]  Comparison page ( For both Org and Individuals )
         - [ ]  Multiple sentence A and Multiple Sentence B ( Comparison )
@@ -29,7 +29,7 @@
     - [ ]  REST API layer
         - [ ]  For Interaction with front-end
         - [x]  For Interaction with other world
-    - [ ]  Comparison Engine Integration
+    - [x]  Comparison Engine Integration
 ----
 - Comparison Engine
     - [x]  Corpus Based Algorithm - Embedding generator
@@ -40,9 +40,9 @@
         - [x]  Many to Many
 ----
 - Jupyter Notebook
-    - [ ] Make Notebook showing tests and results
-    - [ ] Download customer support sample files
-    - [ ] Try using Quora trained Sent-BERT, better question comparision
+    - [x] Make Notebook showing tests and results
+    - [x] Download customer support sample files
+    - [x] Try using Quora trained Sent-BERT, better question comparision
 
 </details>
 

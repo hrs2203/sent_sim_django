@@ -27,6 +27,7 @@ class UserDetail(models.Model):
     """
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     total_credits = models.IntegerField(default=100)
+    saved_query_file = models.CharField(max_length=200)
 
 
 class QueryModel(models.Model):
