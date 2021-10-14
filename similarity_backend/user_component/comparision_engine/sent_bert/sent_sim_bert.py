@@ -18,6 +18,23 @@ embedding_model = SentenceTransformer(model_name)
 # embedding_model.save( os.path.join( local_model_location , local_model ) )
 
 
+def GetSaveFileName(user_id: int) -> str:
+    """Data file name
+
+    Args:
+        user_id (int): user id
+
+    Returns:
+        str: save file location
+    """
+    file: str = os.path.join(
+        local_model_location,
+        "static_file",
+        f"user_data_{user_id}.json"
+    )
+    return file
+
+
 def SaveData(user_id: int, sentencs_pairs: list) -> str:
     """Save/update file for each users data
 
@@ -99,13 +116,17 @@ def LoadData(user_id: int) -> dict:
 
     return file_content
 
+def FormatSaveData(data: dict) -> list:
+    data["body"] = [ [item, data["body"][item][1] ] for item in data["body"].keys() ]
+    return data
+
 
 def CompareAndOrder(new_sentences: list, db_sentences: dict) -> list:
     """Compare sentences and sort each col by the relevance
 
     Args:
         new_sentences (list): new sentences to compare
-        db_sentences (dict): saved data in db
+        db_sentences (dict): saved data in db, json["body"]
 
     Returns:
         list: sorted list with solutions
@@ -129,7 +150,7 @@ def CompareAndOrder(new_sentences: list, db_sentences: dict) -> list:
     for i in range(new_length):
         key = new_sentences[i]
         value = sorted([
-            saved_list[j]+[ float(comparisions[i][j]) ]
+            saved_list[j]+[float(comparisions[i][j])]
             for j in range(saved_length)
         ], key=lambda a: a[2])[::-1]
         sim_dict[key] = value

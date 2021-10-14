@@ -7,7 +7,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from user_component.comparision_engine import MultiSentenceBertComparision
+from user_component.comparision_engine import (
+    MultiSentenceBertComparision,
+    SaveData,
+    LoadData,
+    CompareAndOrder,
+    GetSaveFileName,
+    FormatSaveData
+)
 
 from user_component.static_var import QUERY_CHARGE
 
@@ -59,7 +66,11 @@ class FuzzyAPIView(APIView):
                 )
                 newUser.set_password(password)
                 newUser.save()
-                newUserBank = UserDetail(user_id=newUser)
+                saved_file_location = GetSaveFileName(newUser.id)
+                newUserBank = UserDetail(
+                    user_id=newUser,
+                    saved_query_file=saved_file_location
+                )
                 newUserBank.save()
                 return newUser
             except:
@@ -212,6 +223,45 @@ class UserHistoryAPI(FuzzyAPIView):
         }))
 
 
+class GetUserSavedDetail(FuzzyAPIView):
+    def get(self, request):
+        user_id = request.query_params.get("pk", None)
+        if not self.validate_input(user_id):
+            return Response(self.get_invalid_message())
+        return Response( self.get_valid_message_body( FormatSaveData(LoadData(user_id)) ) )
+    
+    def post(self, request):
+        user_id = request.data.get("pk", None)
+        user_data = request.data.get("user_data", None)
+        if not self.validate_input(user_id, user_data):
+            return Response(self.get_invalid_message())
+        SaveData(user_id, user_data)
+        return Response( self.get_valid_message_body( FormatSaveData(LoadData(user_id)) ) )
+        
+
+## need to add more test to minimize breaking cases
+class UserCompare(FuzzyAPIView):
+    def post(self, request):
+        user_id = request.data.get("pk", None)
+        new_sentences = request.data.get("new_sentences", None)
+        if not self.validate_input(user_id, new_sentences):
+            return Response(self.get_invalid_message())
+        loaded_data = LoadData(user_id)
+
+        s1 = len(new_sentences)
+        s2 = len( loaded_data.get("body", {}).keys() )
+
+        transaction_charge = s1*s2*QUERY_CHARGE
+        status = self.add_credit_to_user(user_id, -1*transaction_charge)
+
+        if not status:
+            return Response(self.get_invalid_message("Insufficient Balance"))
+
+        self.create_new_user_history(transaction_charge, user_id)
+        comparison_response = CompareAndOrder(new_sentences , loaded_data.get("body", {}) )
+        return Response( self.get_valid_message_body( comparison_response ) )
+
+
 class ComparisonAPI(FuzzyAPIView):
 
     def make_comparison(self, sentence1, sentence2, user_id):
@@ -237,6 +287,6 @@ class ComparisonAPI(FuzzyAPIView):
         comp_val = self.make_comparison(sentence1, sentence2, user_id)
 
         if comp_val == -1:
-            return Response( self.get_invalid_message("Insufficient Balance") )
+            return Response(self.get_invalid_message("Insufficient Balance"))
 
         return Response(self.get_valid_message_body(comp_val))
