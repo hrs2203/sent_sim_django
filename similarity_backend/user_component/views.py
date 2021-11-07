@@ -1,19 +1,15 @@
-import re
-from typing import Collection
-from user_component.models import User, UserDetail, UserHistory
-from user_component.serializers import UserDetailSerializer, UserSerializer, UserHistorySerializer
+from user_component.models import User, UserDetail, UserHistory, HistorySentence
+from user_component.serializers import (
+    UserDetailSerializer, UserSerializer, UserHistorySerializer, HistorySentenceSerializer
+)
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 from user_component.comparision_engine import (
-    MultiSentenceBertComparision,
-    SaveData,
-    LoadData,
-    CompareAndOrder,
-    GetSaveFileName,
-    FormatSaveData
+    MultiSentenceBertComparision, SaveData, LoadData,
+    CompareAndOrder, GetSaveFileName, FormatSaveData
 )
 
 from user_component.static_var import QUERY_CHARGE
@@ -86,8 +82,11 @@ class FuzzyAPIView(APIView):
                 return False
             user_obj.total_credits += amt
             user_obj.save()
+            if (amt > 0):
+                self.create_new_user_history(amt, pk, True)
             return True
         except:
+            print("error dete")
             return False
 
     def get_user_history(self, pk: int):
@@ -100,21 +99,48 @@ class FuzzyAPIView(APIView):
         return data
 
     def create_new_user_history(
-        self, transaction_charge: str, user_id: int
+        self,
+        transaction_charge: str,
+        user_id: int,
+        credit_added: bool = False,
+        sentences: list = []
     ):
         user_obj = self.get_user(user_id)
         if user_obj == None:
             return None
         try:
+            query_count = transaction_charge//QUERY_CHARGE
             newUserHistory = UserHistory(
                 transaction_charge=transaction_charge,
-                query_count=(transaction_charge//QUERY_CHARGE),
-                user_id=user_obj
+                query_count=query_count,
+                user_id=user_obj,
+                credit_added=credit_added
             )
             newUserHistory.save()
+            for item in sentences:
+                try:
+                    newSentHis = HistorySentence(
+                        sentence=item, user_id=user_obj, history_id=newUserHistory
+                    )
+                    newSentHis.save()
+                except:
+                    print(item, "not saved", newUserHistory.id, sep=" : ")
+
             return True
         except:
             return False
+
+    def get_user_history_sentence(self, history_id: int) -> list:
+        data = []
+        try:
+            history_obj = UserHistory.objects.filter(id=history_id)
+            if len(history_obj) > 0:
+                data = HistorySentence.objects.filter(
+                    history_id=history_obj[0]
+                )
+        except:
+            pass
+        return data
 
     def get_transaction_charge(self):
         return QUERY_CHARGE
@@ -228,18 +254,18 @@ class GetUserSavedDetail(FuzzyAPIView):
         user_id = request.query_params.get("pk", None)
         if not self.validate_input(user_id):
             return Response(self.get_invalid_message())
-        return Response( self.get_valid_message_body( FormatSaveData(LoadData(user_id)) ) )
-    
+        return Response(self.get_valid_message_body(FormatSaveData(LoadData(user_id))))
+
     def post(self, request):
         user_id = request.data.get("pk", None)
         user_data = request.data.get("user_data", None)
         if not self.validate_input(user_id, user_data):
             return Response(self.get_invalid_message())
         SaveData(user_id, user_data)
-        return Response( self.get_valid_message_body( FormatSaveData(LoadData(user_id)) ) )
-        
+        return Response(self.get_valid_message_body(FormatSaveData(LoadData(user_id))))
 
-## need to add more test to minimize breaking cases
+
+# need to add more test to minimize breaking cases
 class UserCompare(FuzzyAPIView):
     def post(self, request):
         user_id = request.data.get("pk", None)
@@ -249,7 +275,7 @@ class UserCompare(FuzzyAPIView):
         loaded_data = LoadData(user_id)
 
         s1 = len(new_sentences)
-        s2 = len( loaded_data.get("body", {}).keys() )
+        s2 = len(loaded_data.get("body", {}).keys())
 
         transaction_charge = s1*s2*QUERY_CHARGE
         status = self.add_credit_to_user(user_id, -1*transaction_charge)
@@ -257,9 +283,23 @@ class UserCompare(FuzzyAPIView):
         if not status:
             return Response(self.get_invalid_message("Insufficient Balance"))
 
-        self.create_new_user_history(transaction_charge, user_id)
-        comparison_response = CompareAndOrder(new_sentences , loaded_data.get("body", {}) )
-        return Response( self.get_valid_message_body( comparison_response ) )
+        self.create_new_user_history(
+            transaction_charge, user_id, False, new_sentences
+        )
+        comparison_response = CompareAndOrder(
+            new_sentences, loaded_data.get("body", {}))
+        return Response(self.get_valid_message_body(comparison_response))
+
+class UserHistorySentences(FuzzyAPIView):
+    def get(self, request):
+        h_id = request.query_params.get("hid", None)
+        if not self.validate_input(h_id):
+            return Response(self.get_invalid_message())
+        sent_list = self.get_user_history_sentence(h_id)
+        sent_list_ser = HistorySentenceSerializer(
+            sent_list, many=True
+        )
+        return Response(self.get_valid_message_body(sent_list_ser.data))
 
 
 class ComparisonAPI(FuzzyAPIView):
@@ -269,7 +309,8 @@ class ComparisonAPI(FuzzyAPIView):
         row, col = len(comp_val), len(comp_val[0])
         # add new user histroy and add to database
         transaction_charge = row*col*QUERY_CHARGE
-        self.create_new_user_history(transaction_charge, user_id)
+        self.create_new_user_history(
+            transaction_charge, user_id, False, sentence1)
         status = self.add_credit_to_user(user_id, -1*transaction_charge)
         if status:
             return comp_val

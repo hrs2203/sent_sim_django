@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, UserManager
 
 
 class UserHistory(models.Model):
@@ -15,6 +15,16 @@ class UserHistory(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     transaction_charge = models.IntegerField(default=0)
     query_count = models.IntegerField(default=1)
+    credit_added = models.BooleanField(default=False)
+
+
+class HistorySentence(models.Model):
+    """Sentences sent by api for comparision"""
+    sentence = models.CharField(
+        max_length=500, default="Sentence Not Available"
+    )
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    history_id = models.ForeignKey(UserHistory, on_delete=models.CASCADE)
 
 
 class UserDetail(models.Model):
@@ -43,14 +53,3 @@ class QueryModel(models.Model):
     query = models.CharField(max_length=100)
     query_response = models.CharField(max_length=100)
 
-
-# class SemanticModel(models.Model):
-#     """
-#     ## SemanticModel
-#     for storing SemanticModel
-#     - Fields
-#         - model_name : model name ( unique )
-#         - charge : charge per query ( per embedding generation )
-#     """
-#     model_name = models.CharField(max_length=20)
-#     charge = models.IntegerField(default=10)
