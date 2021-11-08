@@ -151,11 +151,11 @@ class FuzzyAPIView(APIView):
 
     def get_invalid_message(self, msg=None):
         msg = msg or "invalid input"
-        return {"statue": status.HTTP_400_BAD_REQUEST, "data": msg}
+        return {"status": status.HTTP_400_BAD_REQUEST, "data": msg}
 
     def get_valid_message_body(self, body=None):
         body = body or {}
-        return {"statue": status.HTTP_200_OK, "data": body}
+        return {"status": status.HTTP_200_OK, "data": body}
 
     def validate_input(self, *args):
         "Validate that no entry is false"
@@ -281,6 +281,9 @@ class UserCompare(FuzzyAPIView):
         s1 = len(new_sentences)
         s2 = len(loaded_data.get("body", {}).keys())
 
+        if ( s1==0 or s2==0 ):
+            return Response(self.get_invalid_message("Invalid input"))
+
         transaction_charge = s1*s2*QUERY_CHARGE
         status = self.add_credit_to_user(user_id, -1*transaction_charge)
 
@@ -310,6 +313,8 @@ class UserHistorySentences(FuzzyAPIView):
 class ComparisonAPI(FuzzyAPIView):
 
     def make_comparison(self, sentence1, sentence2, user_id):
+        if ( len(sentence1)*len(sentence2)==0 ):
+            return Response(self.get_invalid_message("Invalid input"))
         comp_val = MultiSentenceBertComparision(sentence1, sentence2)
         row, col = len(comp_val), len(comp_val[0])
         # add new user histroy and add to database
