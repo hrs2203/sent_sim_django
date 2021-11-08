@@ -16,6 +16,7 @@ class UserHistory(models.Model):
     transaction_charge = models.IntegerField(default=0)
     query_count = models.IntegerField(default=1)
     credit_added = models.BooleanField(default=False)
+    comp_type = models.CharField(max_length=200, default="CUSTOM") # other is DB
 
 
 class HistorySentence(models.Model):

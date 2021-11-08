@@ -103,7 +103,8 @@ class FuzzyAPIView(APIView):
         transaction_charge: str,
         user_id: int,
         credit_added: bool = False,
-        sentences: list = []
+        sentences: list = [],
+        comp_type: str = "CUSTOM"
     ):
         user_obj = self.get_user(user_id)
         if user_obj == None:
@@ -114,13 +115,16 @@ class FuzzyAPIView(APIView):
                 transaction_charge=transaction_charge,
                 query_count=query_count,
                 user_id=user_obj,
-                credit_added=credit_added
+                credit_added=credit_added,
+                comp_type=comp_type
             )
             newUserHistory.save()
             for item in sentences:
                 try:
                     newSentHis = HistorySentence(
-                        sentence=item, user_id=user_obj, history_id=newUserHistory
+                        sentence=item,
+                        user_id=user_obj,
+                        history_id=newUserHistory
                     )
                     newSentHis.save()
                 except:
@@ -284,11 +288,12 @@ class UserCompare(FuzzyAPIView):
             return Response(self.get_invalid_message("Insufficient Balance"))
 
         self.create_new_user_history(
-            transaction_charge, user_id, False, new_sentences
+            transaction_charge, user_id, False, new_sentences, "DB"
         )
         comparison_response = CompareAndOrder(
             new_sentences, loaded_data.get("body", {}))
         return Response(self.get_valid_message_body(comparison_response))
+
 
 class UserHistorySentences(FuzzyAPIView):
     def get(self, request):
