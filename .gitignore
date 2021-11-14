@@ -3,6 +3,7 @@
 proj_env/
 comparision_custom_model/ 
 static_file/
+*.csv
 
 # Django #
 *.log
