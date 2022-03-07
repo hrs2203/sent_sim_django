@@ -8,11 +8,11 @@ import torch
 from torch._C import dtype
 
 # SELECT A DIFFERENT FOR SPECIFIED MODEL LATER.
-# model_name = 'paraphrase-MiniLM-L12-v2'
+model_name = 'paraphrase-MiniLM-L12-v2'
 
-local_model_location = "/home/hrs2203/Desktop/GitHub/sent_sim_django/similarity_backend/user_component/comparision_engine/sent_bert"
-local_model = "comparision_custom_model"
-model_name = os.path.join(local_model_location, local_model)
+# local_model_location = "/home/hrs2203/Desktop/GitHub/sent_sim_django/similarity_backend/user_component/comparision_engine/sent_bert"
+# local_model = "comparision_custom_model"
+# model_name = os.path.join(local_model_location, local_model)
 
 embedding_model = SentenceTransformer(model_name)
 # embedding_model.save( os.path.join( local_model_location , local_model ) )
